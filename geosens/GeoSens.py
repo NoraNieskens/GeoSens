@@ -187,26 +187,33 @@ class GeoSens:
         self.dgl.comboBox.addItems(filenames)
             
             
-   # def getVariables(self): 
-    #    self.selected_filename = self.dlg.comboBox.currentText()
-        
- 
             
             
     def select_output_file(self):
         filename, _filter = QFileDialog.getSaveFileName(
           self.dlg, "Select   output file ","", '*.tif')
         self.dlg.lineEdit_3.setText(filename)
-         
       
          
             
     def download_data(self):
-        r = requests.get(Wuerzburg_Full, allow_redirects=True)
+        selected_filename = self.dlg.comboBox.currentText()
+        
+        r = requests.get(selected_filename, allow_redirects=True)
         # Save Dataset 
         ## Reactive to outputpath by User Input
         self.choosen_path = self.dlg.lineEdit_3.currentText()
         open(choosen_path, 'wb').write(r.content)
+
+
+    def openRaster(self):
+        """ open raster from file dialog """
+        fname = "test1"
+        choosen_path = self.dlg.lineEdit_3.text()
+        
+        if fname is not None: 
+            self.iface.addRasterLayer(choosen_path, fname)
+            #self.loadRasters()
 
         
     
@@ -215,7 +222,6 @@ class GeoSens:
         rlayer2 = QgsRasterLayer(urlWithParams, 'OpenStreetMap', 'wms')
         rlayer2.isValid()
         QgsProject.instance().addMapLayer(rlayer2)
-        
         
         
             
@@ -237,11 +243,14 @@ class GeoSens:
             self.first_start = False
             self.dlg = GeoSensDialog()
             self.dlg.pushButton.clicked.connect(self.select_output_file)
-          #  self.dgl.getOptions()
-        # self.dlg.comboBox.clear()
             self.dlg.comboBox.addItems(["Wuerzburg_Full", "Wuerzburg_Small"])
+            self.dlg.checkBox.clicked.connect(self.openRaster)
+            
             self.dlg.checkBox_2.clicked.connect(self.load_OSM)
-
+            self.dlg.checkBox_3.clicked.connect(self.load_GoogleSat)
+            #QMessageBox.information(None, "Gruss", "Hallo Welt!")
+            
+          
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
@@ -249,6 +258,12 @@ class GeoSens:
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-          #  name = self.dlg.lineEdit.text()
-            pass
+            # substitute with your code.            #pass
+             selected_filename = self.dlg.comboBox.text()   
+             r = requests.get(selected_filename, allow_redirects=True)
+        # Save Dataset 
+        ## Reactive to outputpath by User Input
+             self.choosen_path = self.dlg.lineEdit_3.text()
+             open(choosen_path, 'wb').write(r.content)
+             
+        
