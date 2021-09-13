@@ -24,11 +24,28 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
 
+
+import requests
+import sys 
+import os
+
+from qgis.core import QgsRasterLayer
+#from qgis.core import QgsRasterBandStats
+#from qgis.core import QgsRasterRange
+#from qgis.core import QgsColorRampShader
+#from qgis.core import QgsRasterShader
+#from qgis.core import QgsSingleBandPseudoColorRenderer
+#from qgis.core import QgsMultiBandColorRenderer
+
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .GeoSens_dialog import GeoSensDialog
 import os.path
+
+## Link collection to data in Github
+Wuerzburg_Full = 'https://github.com/Ioadidaiz/GeoSensDataRepo/raw/main/Raster/S2_WB_2348_10M.tif'
 
 
 class GeoSens:
@@ -154,6 +171,7 @@ class GeoSens:
 
         # will be set False in run()
         self.first_start = True
+        
 
 
     def unload(self):
@@ -164,12 +182,50 @@ class GeoSens:
                 action)
             self.iface.removeToolBarIcon(action)
             
-    
+    def getOptions(self):
+        filenames = ["Wuerzburg_Full", "Wuerzburg_Small"]
+        self.dgl.comboBox.addItems(filenames)
+            
+            
+   # def getVariables(self): 
+    #    self.selected_filename = self.dlg.comboBox.currentText()
+        
+ 
+            
             
     def select_output_file(self):
         filename, _filter = QFileDialog.getSaveFileName(
           self.dlg, "Select   output file ","", '*.tif')
         self.dlg.lineEdit_3.setText(filename)
+         
+      
+         
+            
+    def download_data(self):
+        r = requests.get(Wuerzburg_Full, allow_redirects=True)
+        # Save Dataset 
+        ## Reactive to outputpath by User Input
+        self.choosen_path = self.dlg.lineEdit_3.currentText()
+        open(choosen_path, 'wb').write(r.content)
+
+        
+    
+    def load_OSM(self): 
+        urlWithParams = 'type=xyz&url=https://tile.openstreetmap.org/{z}/{x}/{y}.png&zmax=19&zmin=0&crs=EPSG3857'
+        rlayer2 = QgsRasterLayer(urlWithParams, 'OpenStreetMap', 'wms')
+        rlayer2.isValid()
+        QgsProject.instance().addMapLayer(rlayer2)
+        
+        
+        
+            
+    def load_GoogleSat(self): 
+        service_url = "mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" 
+        service_uri = "type=xyz&zmin=0&zmax=21&url=https://"+requests.utils.quote(service_url)
+        tms_layer = iface.addRasterLayer(service_uri, "Google Sat", "wms")
+        #lyrs=y - hybrid #lyrs=s - sat #lyrs=m - road map    
+     
+
 
 
     def run(self):
@@ -181,6 +237,10 @@ class GeoSens:
             self.first_start = False
             self.dlg = GeoSensDialog()
             self.dlg.pushButton.clicked.connect(self.select_output_file)
+          #  self.dgl.getOptions()
+        # self.dlg.comboBox.clear()
+            self.dlg.comboBox.addItems(["Wuerzburg_Full", "Wuerzburg_Small"])
+            self.dlg.checkBox_2.clicked.connect(self.load_OSM)
 
         # show the dialog
         self.dlg.show()
@@ -190,4 +250,5 @@ class GeoSens:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+          #  name = self.dlg.lineEdit.text()
             pass
